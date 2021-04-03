@@ -1,4 +1,4 @@
-# Shepard-Metzler Automated Item Generation (SMAIG) project
+# Shepard-Metzler Automated Item Generation (SMAIG) project version 02.0
 * R functions using the rgl graphics package to build 3D models. 
 
 * Working our way to a package that generates Shepard-Metzler test images.
