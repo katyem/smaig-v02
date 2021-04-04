@@ -73,15 +73,14 @@ View(SMAIGtable)
   write.xlsx(SMAIGtable, file = "SMAIG.xlsx")
   
 # save picture as a png to your working directory. WARNING: overwrites
-  setwd("D:/R stuff/AIG/smaigPics") # Change to reflect your working directory
-  i = 999 # should use the stackID in the SMAIGtable to match pictures' names to data
+  setwd("D:/R stuff/smaig-v02/smaigPics") # Change to reflect your working directory
+  i = 99 # should use the stackID in the SMAIGtable to match pictures' names to data
 
     snapName <- paste0("smaig ", formatC(i), ".png") # create a variable with the name of the new picture
   snapName #display name in RStudio console
   rgl.snapshot(snapName)
   ##
 
-  
   setwd("D:/R stuff/AIG") # Change to reflect your working directory
 
   #-----------------------------------------------------------------------------------
