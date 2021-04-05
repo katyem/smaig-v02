@@ -86,17 +86,20 @@ View(SMAIGtable)
   #-----------------------------------------------------------------------------------
   #-----------------------------------------------------------------------------------
   ## Save pictures of all stacks in current SMAIGtable
-  stackSize = nrow(SMAIGtable) 
   # save picture as a png to your working directory. WARNING: overwrites
-  setwd("D:/R stuff/SMAIG_occlusion/smaigColor") # Change to reflect your working directory
-  stackCount  = SMAIGtable[stackSize,1]
+  setwd("D:/R stuff/SMAIG_occlusion/smaigGray") # Change to reflect your working directory
+  stackCount  = SMAIGtable[nrow(SMAIGtable) ,1]
   for (i in 1:stackCount) {
     cubeCoord <- tableStack(stackID = i) 
     displayRainbow()
     #displayRainbow2(stackCount = i) #stackCount sets each stack to one solid color
-    #displayStack(cMarker = F) 
-    snapName <- paste0("Color_", formatC(i), ".png") # create a variable with the name of the new picture
-    snapName #display name in RStudio console
+    displayStack(cMarker = F) 
+    snapName <- paste0("Gray_", formatC(i), ".png") # create a variable with the name of the new picture
+    
+    if (i < 10) {
+    snapName <- paste0("Gray_0", formatC(i), ".png") # create a variable with the name of the new picture
+    }
+        snapName #display name in RStudio console
     rgl.snapshot(snapName)
   }
 
