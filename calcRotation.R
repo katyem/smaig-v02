@@ -8,7 +8,7 @@ source("SMAIGpkg.R")  #treating this like a package
 
 SMAIGtable <- read.xlsx("SMMRT_Final.xlsx")  # read first sheet of your deck of stacks
 
-# R doesn't have a trace function to multiply the diagonal of the matrix; I found this which seems to work: https://rpubs.com/aaronsc32/matrix-trace
+# R doesn't have a trace function to add the diagonal of the matrix; I found this which seems to work: https://rpubs.com/aaronsc32/matrix-trace
 trace <- function(Amatrix) {  
   n <- dim(Amatrix)[1] # get dimension of matrix
   tr <- 0 # initialize trace value
