@@ -123,12 +123,16 @@ displayRainbow <- function(newScreen = FALSE){
     cubeRainbow(cubeCoord[i,1],cubeCoord[i,2],cubeCoord[i,3], filled=T, fillcol = cubeColor)
   }
   
-  newMatrix = diag(1,4,4) # diag = 1
+  newMatrix = diag(1,4,4) # diagonals = 1; sets the starting point of the matrix in 3d
+  stackSize =10
   cRow = stackSize+1
+  # Use the Eular angles stored in the last row (stackSize+1) of cubeCord
+  # rotate3d(obj, angle, x, y, z, matrix, ...)
   newMatrix = rotate3d(newMatrix, pi*(cubeCoord[stackSize+1,1]/180), 1,0,0) # Rotate about model's x axis
   newMatrix = rotate3d(newMatrix, pi*(cubeCoord[stackSize+1,2]/180), 0,1,0) # Rotate about model's y axis
   newMatrix = rotate3d(newMatrix, pi*(cubeCoord[stackSize+1,3]/180), 0,0,1) # Rotate about model's z axis
-  par3d(userMatrix = newMatrix, zoom = cubeCoord[stackSize+1,4])
+  par3d(userMatrix = newMatrix, zoom = 1) # changed from cubeCoord[stackSize+1,4]
+  
   
   rgl.pop("lights")
   light3d(diffuse = "gray50", specular = "gray50")
@@ -270,7 +274,7 @@ displayStack <- function(cMarker=FALSE, newScreen = FALSE){
   newMatrix = rotate3d(newMatrix, pi*(cubeCoord[stackSize+1,1]/180), 1,0,0) # Rotate about model's x axis
   newMatrix = rotate3d(newMatrix, pi*(cubeCoord[stackSize+1,2]/180), 0,1,0) # Rotate about model's y axis
   newMatrix = rotate3d(newMatrix, pi*(cubeCoord[stackSize+1,3]/180), 0,0,1) # Rotate about model's z axis
-  par3d(userMatrix = newMatrix, zoom = cubeCoord[stackSize+1,4])
+  par3d(userMatrix = newMatrix, zoom = 1) # changed from cubeCoord[stackSize+1,4]
 
   rgl.pop("lights")
   light3d(diffuse = "gray75", specular = "gray75")
@@ -536,6 +540,7 @@ store3d <- function(){
   cubeCo <- cubeCoord
   degLatt = rglToLattice(rotm = par3d("userMatrix"))
   print(degLatt)
+  # Store Eular angles 
     cubeCo[11,1] = round(degLatt[[3]][1],5) # FYI, pi == 180 degrees
     cubeCo[11,2] = round(degLatt[[2]][1],5) # FYI, pi == 180 degrees
     cubeCo[11,3] = round(degLatt[[1]][1],5) # FYI, pi == 180 degrees
