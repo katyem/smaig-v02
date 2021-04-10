@@ -64,18 +64,17 @@ View(SMAIGtable)
 #rgl.viewpoint(); 
 # either manipulate the stack with mouse or use the mirrorStack function to change rotation
 # use store3d function to save the changed coordinates to cubeCoord
-  SMAIGtable <- read.xlsx("SMAIG.test.xlsx")  # read first sheet of your deck of stacks
+  SMAIGtable <- read.xlsx("SMMRT_Final.xlsx")  # read first sheet of your deck of stacks
  
-  cubeCoord <- tableStack(stackID=1)
+  cubeCoord <- tableStack(stackID=5)
   displayStack(newScreen = TRUE, cMarker = T)
     
-    cubeCoord <- tableStack(stackID=16)
-  displayStack(newScreen = TRUE, cMarker = T)
+    cubeCoord <- tableStack(stackID=6)
+  displayStack(newScreen = TRUE, cMarker = T, rglAxis = T)
   
   cubeCoord <- tableStack(stackID=17)
   displayStack(newScreen = TRUE, cMarker = T)
 
-  
     cubeCoord = store3d()
   displayStack(newScreen = TRUE, cMarker = T)
   cubeCoord
@@ -126,11 +125,12 @@ View(SMAIGtable)
 #-----------------------------------------------------------------------------------
 ## Setting up axes with markers in the rgl image: http://www.sthda.com/english/wiki/a-complete-guide-to-3d-visualization-device-system-in-r-r-software-and-data-visualization#rgl_add_axes-a-custom-function-to-add-x-y-and-z-axes
 #-----------------------------------------------------------------------------------
-
-  x <- 10
-  y <- 10
-  z <- 10
-    rgl_add_axes(x,y,z, ylab="y This")
+  displayStack(newScreen = T, cMarker = T, rglAxis = T)
+  x <- 3
+  y <- 3
+  z <- 3
+    rgl_add_axes(4,4,4)
+    axes3d() 
     # x, y, z : numeric vectors corresponding to
   #  the coordinates of points
   # axis.col : axis colors

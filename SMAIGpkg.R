@@ -29,6 +29,129 @@ light3d(diffuse = "gray75", specular = "gray75")
 ####
 }
 
+#-----------------------------------------------------------------------------------
+displayStack <- function(cMarker=FALSE, newScreen = FALSE, stay = FALSE, rglAxis = FALSE){
+  x = c(20, 20, 420, 420) # size of new screen if first one
+  countScreens = rgl.dev.list()
+  if (length(countScreens) == 0) {
+    newScreen = TRUE
+  }
+  if (newScreen == TRUE) {
+    x = c(20, 20, 420, 420)
+    
+    if (length(countScreens) == 1) {
+      x = c(20, 420, 420, 820)
+    } else if (length(countScreens) > 1) {
+      x = c(20, 20+(length(countScreens)*10), 420, 470+(length(countScreens)*10))
+    }
+    
+    open3d()    
+    par3d(windowRect = x)  #initiate/clear RGL screen
+    bg3d('black')
+  } else {
+    clear3d() #initiate/clear RGL screen
+  }
+  
+  rgl.bringtotop(stay)
+  stackSize=nrow(cubeCoord)-1
+  cubeColor <- 'gray'
+  if (exists("cubeCoord") == F) {
+    cubeCoord <<- buildStack() # assign to envir = .GlobalEnv)
+  }
+  
+  # Fix the centering problem; 
+  # 1) Find the center of each stack axis
+  lgVal = c(0,0,0)
+  for (i in 1:stackSize) {
+    # move down each axis to find largest absolute value (most often last value, but not always)
+    for (j in 1:3) {
+      if (abs(cubeCoord[i,j]) > lgVal[j]) {
+        lgVal[j] <- cubeCoord[i,j]
+      }
+    }
+  }
+  #########cubeCoord = temp
+  # 2) calculate the center and replace all cubeCoord values
+  is.even <- function(x) x %% 2 == 0
+  for (i in 1:stackSize) {
+    # move down each axis to find largest absolute value
+    for (j in 1:3) {
+      if (is.even(lgVal[j])) {
+        cubeCoord[i,j] <- cubeCoord[i,j]-ceiling(lgVal[j]/2)
+      } else {
+        cubeCoord[i,j] <- cubeCoord[i,j]-floor(lgVal[j]/2)
+      }
+    }
+  }
+  
+  for (i in 1:stackSize) { # build four legs using 'stackSize' number of cubes
+    if (cMarker) {    
+      if (i == 1) {
+        cubeColor <- 'blue'
+      } else if (i == stackSize) {
+        cubeColor <- 'red'
+      } else {
+        cubeColor <- 'gray'
+      }
+    }
+    cube(cubeCoord[i,1],cubeCoord[i,2],cubeCoord[i,3], filled=T, fillcol = cubeColor)
+  }
+  
+  newMatrix = diag(1,4,4) # diag = 1
+  cRow = stackSize+1
+  newMatrix = rotate3d(newMatrix, pi*(cubeCoord[stackSize+1,1]/180), 1,0,0) # Rotate about model's x axis
+  newMatrix = rotate3d(newMatrix, pi*(cubeCoord[stackSize+1,2]/180), 0,1,0) # Rotate about model's y axis
+  newMatrix = rotate3d(newMatrix, pi*(cubeCoord[stackSize+1,3]/180), 0,0,1) # Rotate about model's z axis
+  par3d(userMatrix = newMatrix, zoom = 1) # changed from cubeCoord[stackSize+1,4]
+  
+  rgl.pop("lights")
+  light3d(diffuse = "gray75", specular = "gray75")
+  
+  if (rglAxis == TRUE) {
+    rgl_add_axes(4,4,4)
+  }
+}
+
+
+#-----------------------------------------------------------------------------------
+## Setting up axes with markers in the rgl image: http://www.sthda.com/english/wiki/a-complete-guide-to-3d-visualization-device-system-in-r-r-software-and-data-visualization#rgl_add_axes-a-custom-function-to-add-x-y-and-z-axes
+#-----------------------------------------------------------------------------------
+
+rgl_add_axes <- function(x, y, z, axis.col = "grey",
+                         xlab = "x", ylab="y", zlab="z", show.plane = FALSE, 
+                         show.bbox = FALSE, bbox.col = c("#333377","black"))
+{ 
+  
+  lim <- function(x){c(-max(abs(x)), max(abs(x))) * 1.1}
+  # Add axes
+  xlim <- lim(x); ylim <- lim(y); zlim <- lim(z)
+  rgl.lines(xlim, c(0, 0), c(0, 0), color = axis.col)
+  rgl.lines(c(0, 0), ylim, c(0, 0), color = axis.col)
+  rgl.lines(c(0, 0), c(0, 0), zlim, color = axis.col)
+  
+  # Add a point at the end of each axes to specify the direction
+  axes <- rbind(c(xlim[2], 0, 0), c(0, ylim[2], 0), 
+                c(0, 0, zlim[2]))
+  rgl.points(axes, color = axis.col, size = 3)
+  
+  # Add axis labels
+  rgl.texts(axes, text = c(xlab, ylab, zlab), color = axis.col,
+            adj = c(0.5, -0.8), size = 2)
+  
+  # Add plane
+  if(show.plane) {
+    xlim <- xlim/1.1; zlim <- zlim /1.1
+    rgl.quads( x = rep(xlim, each = 2), y = c(0, 0, 0, 0),
+               z = c(zlim[1], zlim[2], zlim[2], zlim[1]))
+  }
+  # Add bounding box decoration
+  if(show.bbox){
+    rgl.bbox(color=c(bbox.col[1],bbox.col[2]), alpha = 0.5, 
+             emission=bbox.col[1], specular=bbox.col[1], shininess=5, 
+             xlen = 3, ylen = 3, zlen = 3) 
+  }
+}
+
 ## -------------------------------------------------------------------------------------
 # cube function is from https://gist.github.com/EconometricsBySimulation/5c00a9e91abebd889fb7
 cubeRainbow <- function(x=0,y=0,z=0, bordered=FALSE, 
@@ -227,58 +350,6 @@ rotateTest <- function(cMarker=FALSE )
   
 }  
 
-#-----------------------------------------------------------------------------------
-displayStack <- function(cMarker=FALSE, newScreen = FALSE){
-  x = c(20, 20, 420, 420) # size of new screen if first one
-  countScreens = rgl.dev.list()
-  if (length(countScreens) == 0) {
-    newScreen = TRUE
-  }
-  if (newScreen == TRUE) {
-      x = c(20, 20, 420, 420)
-
-    if (length(countScreens) == 1) {
-      x = c(20, 420, 420, 820)
-    } else if (length(countScreens) > 1) {
-      x = c(20, 20+(length(countScreens)*10), 420, 470+(length(countScreens)*10))
-    }
-  
-      open3d()    
-      par3d(windowRect = x)  #initiate/clear RGL screen
-    bg3d('black')
-  } else {
-    clear3d() #initiate/clear RGL screen
-  }
-
-  rgl.bringtotop(stay = FALSE)
-  stackSize=nrow(cubeCoord)-1
-  cubeColor <- 'gray'
-  if (exists("cubeCoord") == F) {
-    cubeCoord <<- buildStack() # assign to envir = .GlobalEnv)
-  }
-  for (i in 1:stackSize) { # build four legs using 'stackSize' number of cubes
-    if (cMarker) {    
-      if (i == 1) {
-        cubeColor <- 'blue'
-      } else if (i == stackSize) {
-        cubeColor <- 'red'
-      } else {
-        cubeColor <- 'gray'
-      }
-    }
-    cube(cubeCoord[i,1],cubeCoord[i,2],cubeCoord[i,3], filled=T, fillcol = cubeColor)
-  }
-  
-  newMatrix = diag(1,4,4) # diag = 1
-  cRow = stackSize+1
-  newMatrix = rotate3d(newMatrix, pi*(cubeCoord[stackSize+1,1]/180), 1,0,0) # Rotate about model's x axis
-  newMatrix = rotate3d(newMatrix, pi*(cubeCoord[stackSize+1,2]/180), 0,1,0) # Rotate about model's y axis
-  newMatrix = rotate3d(newMatrix, pi*(cubeCoord[stackSize+1,3]/180), 0,0,1) # Rotate about model's z axis
-  par3d(userMatrix = newMatrix, zoom = 1) # changed from cubeCoord[stackSize+1,4]
-
-  rgl.pop("lights")
-  light3d(diffuse = "gray75", specular = "gray75")
-  }
 
 #-----------------------------------------------------------------------------------
 
