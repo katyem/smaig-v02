@@ -77,9 +77,9 @@ displayStack <- function(cMarker=FALSE, newScreen = FALSE, stay = FALSE, rglAxis
     # move down each axis to find largest absolute value
     for (j in 1:3) {
       if (is.even(lgVal[j])) {
-        cubeCoord[i,j] <- cubeCoord[i,j]-ceiling(lgVal[j]/2)
+        cubeCoord[i,j] <- cubeCoord[i,j]-ceiling(lgVal[j]/2)-.5
       } else {
-        cubeCoord[i,j] <- cubeCoord[i,j]-floor(lgVal[j]/2)
+        cubeCoord[i,j] <- cubeCoord[i,j]-floor(lgVal[j]/2)+.5
       }
     }
   }

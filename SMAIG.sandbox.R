@@ -8,7 +8,7 @@ library('magick')
 library('rgl') 
 library('magrittr')
 library("openxlsx")
-
+getwd()
 setwd("D:/R stuff/smaig-v02") #My AIG files
 source("SMAIGpkg.R")  #treating this like a package
 
@@ -64,18 +64,23 @@ View(SMAIGtable)
 #rgl.viewpoint(); 
 # either manipulate the stack with mouse or use the mirrorStack function to change rotation
 # use store3d function to save the changed coordinates to cubeCoord
-  SMAIGtable <- read.xlsx("SMMRT_Final.xlsx")  # read first sheet of your deck of stacks
- 
-  cubeCoord <- tableStack(stackID=5)
+ # SMAIGtable <- read.xlsx("SMMRT_Final.xlsx")  # read first sheet of your deck of stacks
+  SMAIGtable <- read.xlsx("SMAIG.test.xlsx")  # read first sheet of your deck of stacks
+  
+  cubeCoord <- tableStack(stackID=1)
   displayStack(newScreen = TRUE, cMarker = T)
     
-    cubeCoord <- tableStack(stackID=6)
+  cubeCoord <- tableStack(stackID=1)
   displayStack(newScreen = TRUE, cMarker = T, rglAxis = T)
+  spheres3d(0, 0, 0, radius = 4.5, col=rgb(1,1,1), alpha=0.3)
+  axes3d()
+  grid3d(c("x", "y+", "z"))
+  #title3d('main', 'sub', 'xlab', 'ylab', 'zlab')
+  movie3d(spin3d(axis=c(120,-120,-120), rpm=5), duration=5, movie = "SM_3d_Spin_v5", dir = "D:/R stuff/smaig-v02/images", type = "gif") 
   
-  cubeCoord <- tableStack(stackID=17)
   displayStack(newScreen = TRUE, cMarker = T)
 
-    cubeCoord = store3d()
+  cubeCoord = store3d()
   displayStack(newScreen = TRUE, cMarker = T)
   cubeCoord
   rgl_add_axes(x, y, z, show.bbox = TRUE)
@@ -118,9 +123,9 @@ View(SMAIGtable)
 
 #-----------------------------------------------------------------------------------
 #-----------------------------------------------------------------------------------
-##movie3d(spin3d(axis=c(20,-10,-60), rpm=4), duration=10) 
+movie3d(spin3d(axis=c(90,-90,-90), rpm=2), duration=10, movie = "3d_Spin", dir = "D:/R stuff/smaig-v02/images") 
   
-  
+
 #-----------------------------------------------------------------------------------
 #-----------------------------------------------------------------------------------
 ## Setting up axes with markers in the rgl image: http://www.sthda.com/english/wiki/a-complete-guide-to-3d-visualization-device-system-in-r-r-software-and-data-visualization#rgl_add_axes-a-custom-function-to-add-x-y-and-z-axes
