@@ -12,7 +12,7 @@ library("openxlsx")
 setwd("D:/R stuff/smaig-v02") #My AIG files
 source("SMAIGpkg.R")  #treating this like a package
 
-SMAIGtable <- read.xlsx("SMAIG.test.xlsx")  # read first sheet of your deck of stacks
+SMAIGtable <- read.xlsx("SMMRT_Final.xlsx")  # read first sheet of your deck of stacks
 #head(SMAIGtable[, 1:5])
 
 View(SMAIGtable)

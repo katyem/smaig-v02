@@ -9,7 +9,10 @@ library('rgl')
 library('magrittr')
 library("openxlsx")
 getwd()
-setwd("D:/R stuff/smaig-v02") #My AIG files
+thiswd = "D:/R stuff/smaig-v02"
+imagewd = "D:/R stuff/smaig-v02/smaigPics"
+
+setwd(thiswd) #My AIG files
 source("SMAIGpkg.R")  #treating this like a package
 
 SMAIGtable <- read.xlsx("SMAIG.test.xlsx")  # read first sheet of your deck of stacks
@@ -31,17 +34,18 @@ View(SMAIGtable)
 #-----------------------------------------------------------------------------------
 # This "randomly" repopulates the cubeCoord matrix variable
   cubeCoord = buildStack() 
-
+displayStack(cMarker = T)
+cubeCoord = store3d()  
 ##OR repopulate the cubeCoord matrix with SMAIGTable data for the stackID passed
-  cubeCoord <- tableStack(stackID =18) # if stackID==0, choose first stack in SMAIGtable
+  cubeCoord <- tableStack(stackID =1) # if stackID==0, choose first stack in SMAIGtable
 #-----------------------------------------------------------------------------------
 ## DISPAY the stack in a window - careful, RStudio may place this window in a different monitor if available.
   displayStack(cMarker = F) #cMarker: blue for first cube and red for last cube
   displayStack(cMarker = T)
   #OR
   displayStack(newScreen = TRUE, cMarker = T) # new device screen, this allows you to compare stacks
-  displayRainbow()
-  
+  displayRainbow(threeD = F)
+  displayRainbow(threeD=TRUE, printBuild = TRUE )  
 # move focus between two or more device screens; up or down
   changeFocus() # default is upFocus = FALSE  
   changeFocus(upFocus = TRUE)
@@ -63,27 +67,41 @@ View(SMAIGtable)
 
 #rgl.viewpoint(); 
 # either manipulate the stack with mouse or use the mirrorStack function to change rotation
-# use store3d function to save the changed coordinates to cubeCoord
- # SMAIGtable <- read.xlsx("SMMRT_Final.xlsx")  # read first sheet of your deck of stacks
-  SMAIGtable <- read.xlsx("SMAIG.test.xlsx")  # read first sheet of your deck of stacks
-  
-  cubeCoord <- tableStack(stackID=1)
-  displayStack(newScreen = TRUE, cMarker = T)
-    
-  cubeCoord <- tableStack(stackID=1)
-  displayStack(newScreen = TRUE, cMarker = T, rglAxis = T)
-  spheres3d(0, 0, 0, radius = 4.5, col=rgb(1,1,1), alpha=0.3)
-  axes3d()
-  grid3d(c("x", "y+", "z"))
-  #title3d('main', 'sub', 'xlab', 'ylab', 'zlab')
-  movie3d(spin3d(axis=c(120,-120,-120), rpm=5), duration=5, movie = "SM_3d_Spin_v5", dir = "D:/R stuff/smaig-v02/images", type = "gif") 
-  
-  displayStack(newScreen = TRUE, cMarker = T)
+  # use store3d function to save the changed coordinates to cubeCoord
+   # SMAIGtable <- read.xlsx("SMMRT_Final.xlsx")  # read first sheet of your deck of stacks
 
+      SMAIGtable <- read.xlsx("SMAIG.test.xlsx")  # read first sheet of your deck of stacks
+    cubeCoord <- tableStack(stackID=18)  
+    
+  source("SMAIGpkg.R")  #smaig function library       
+
+    cubeCoord = buildStack() 
+    displayStack(newScreen = F, cMarker = T)
+      
+    cubeCoord <- tableStack(stackID=15)
+    #displayStack(newScreen = T, cMarker = T, rglAxis = T)
+    displayRainbow(newScreen = T, threeD = F, printBuild = F, rglAxis = T ) 
+ 
+displayRainbow(newScreen = T, threeD = T, printBuild = T, rglAxis = T )  
+
+    spheres3d(0, 0, 0, radius = 4.5, col=rgb(1,1,1), alpha=0.3)
+    axes3d()
+    grid3d(c("x", "y+", "z"))
+    #title3d('main', 'sub', 'xlab', 'ylab', 'zlab')
+    movie3d(spin3d(axis=c(45,-45,60), rpm=10), duration=5, movie = "SM_3d_FlatSpin2", dir = "D:/R stuff/smaig-v02/images", type = "gif") 
+    
+    movie3d(spin3d(axis=c(cubeCoord[11,1]*-1,0,0), rpm=5), duration=5, movie = "SM_3d_Spin_x45", dir = "D:/R stuff/smaig-v02/images", type = "gif") 
+    movie3d(spin3d(axis=c(0,cubeCoord[11,2]*-1,0), rpm=5), duration=5, movie = "SM_3d_Spin_y45", dir = "D:/R stuff/smaig-v02/images", type = "gif") 
+    movie3d(spin3d(axis=c(0,0,cubeCoord[11,3]*-1), rpm=5), duration=5, movie = "SM_3d_Spin_z45", dir = "D:/R stuff/smaig-v02/images", type = "gif") 
+
+  displayStack(newScreen = TRUE, cMarker = T)
   cubeCoord = store3d()
   displayStack(newScreen = TRUE, cMarker = T)
   cubeCoord
   rgl_add_axes(x, y, z, show.bbox = TRUE)
+
+# save current stack to cubeCoord  
+  cubeCoord = store3d()  
 # appends cubeCoord (the current stack) to SMAIGTable (which you can save to excel)
   SMAIGtable <- saveStack() 
   
@@ -94,8 +112,10 @@ View(SMAIGtable)
   setwd("D:/R stuff/smaig-v02/smaigPics") # Change to reflect your working directory
   i = 99 # should use the stackID in the SMAIGtable to match pictures' names to data
 
+  #snapName <- "smaig.png "
     snapName <- paste0("smaig ", formatC(i), ".png") # create a variable with the name of the new picture
-  snapName #display name in RStudio console
+  
+    print(snapName) #display name in RStudio console
   rgl.snapshot(snapName)
   ##
 
@@ -105,8 +125,8 @@ View(SMAIGtable)
   #-----------------------------------------------------------------------------------
   ## Save pictures of all stacks in current SMAIGtable
   # save picture as a png to your working directory. WARNING: overwrites
-  setwd("D:/R stuff/SMAIG_occlusion/smaigGray") # Change to reflect your working directory
-  stackCount  = SMAIGtable[nrow(SMAIGtable) ,1]
+    setwd(imagewd)
+   stackCount  = SMAIGtable[nrow(SMAIGtable) ,1]
   for (i in 1:stackCount) {
     cubeCoord <- tableStack(stackID = i) 
     displayRainbow()

@@ -152,40 +152,15 @@ rgl_add_axes <- function(x, y, z, axis.col = "grey",
   }
 }
 
-## -------------------------------------------------------------------------------------
-# cube function is from https://gist.github.com/EconometricsBySimulation/5c00a9e91abebd889fb7
-cubeRainbow <- function(x=0,y=0,z=0, bordered=FALSE, 
-                        filled = TRUE, lwd=2, scale=1,
-                        fillcol = 'blue',
-                        bordercol ='gray', ...) {
-  mycube <- cube3d(color = fillcol, alpha = 1, shininess=0, lit=F)
-  #material3d(shininess=1)
-  # Reduce size to unit
-  mycube$vb[4,] <- mycube$vb[4,]/scale*2
-  
-  for (i in 1:length(x)) {
-    # Add cube border
-    if (bordered) {
-      bcube <- mycube
-      bcube$material$lwd <- lwd
-      bcube$material$front <- 'line'
-      bcube$material$back <- 'line'
-      bcube %>% translate3d(x[i], y[i], z[i]) %>% shade3d
-    }
-    # Add cube fill
-    if (filled) {
-      fcube <- mycube
-      #fcube$vb[4,] <- fcube$vb[4,]*1.01
-      fcube$material$col <- fillcol
-      fcube %>% translate3d(x[i], y[i], z[i]) %>% shade3d
-    }
-  }
-}
 
 #-----------------------------------------------------------------------------------
-displayRainbow <- function(newScreen = FALSE){
+displayRainbow <- function(bordered=FALSE, stackSize = 10, rglAxis = FALSE, printBuild = FALSE, threeD = TRUE, newScreen = FALSE){
   x = c(20, 20, 420, 420) # size of new screen if first one
   countScreens = rgl.dev.list()
+  if (printBuild) {
+    setwd(imagewd) # your image directory
+    print(imagewd) #display name in RStudio console
+  }
   if (length(countScreens) == 0) {
     newScreen = TRUE
   }
@@ -201,9 +176,19 @@ displayRainbow <- function(newScreen = FALSE){
     open3d()    
     par3d(windowRect = x)  #initiate/clear RGL screen
     bg3d('black')
+    if (rglAxis == TRUE) {
+      rgl_add_axes(4,4,4)
+      par3d(zoom = .6)
+      Sys.sleep(1)
+    }
   } else {
     clear3d() #initiate/clear RGL screen
   }
+  rgl.pop("lights")
+  light3d(viewpoint.rel = TRUE, ambient = "gray75", diffuse = "gray75", specular = "gray50")
+  newMatrix = diag(1,4,4)
+  newMatrix = rotate3d(newMatrix, 0, 1,1,1) # 
+  par3d(userMatrix = newMatrix, zoom = 1) # changed from cubeCoord[stackSize+1,4]
   
   rgl.bringtotop(stay = FALSE)
   stackSize=nrow(cubeCoord)-1
@@ -211,6 +196,34 @@ displayRainbow <- function(newScreen = FALSE){
   if (exists("cubeCoord") == F) {
     cubeCoord <<- buildStack() # assign to envir = .GlobalEnv)
   }
+  
+  # Fix the centering problem; 
+  # 1) Find the center of each stack axis
+  lgVal = c(0,0,0)
+  for (i in 1:stackSize) {
+    # move down each axis to find largest absolute value (most often last value, but not always)
+    for (j in 1:3) {
+      if (abs(cubeCoord[i,j]) > lgVal[j]) {
+        lgVal[j] <- cubeCoord[i,j]
+      }
+    }
+  }
+  #########cubeCoord = temp
+  # 2) calculate the center and replace all cubeCoord values
+  is.even <- function(x) x %% 2 == 0
+  for (i in 1:stackSize) {
+    for (j in 1:3) {
+      if (is.even(lgVal[j])) { 
+        
+        cubeCoord[i,j] <- (cubeCoord[i,j]-ceiling(lgVal[j]/2))+.5
+      } else {
+        cubeCoord[i,j] <- (cubeCoord[i,j]-floor(lgVal[j]/2))-.5
+      }
+    }
+  }
+
+  bigPause = .25
+  
   for (i in 1:stackSize) { # build four legs using 'stackSize' number of cubes
     if (i == 1) {
       cubeColor <- 'blue'
@@ -243,25 +256,58 @@ displayRainbow <- function(newScreen = FALSE){
       cubeColor <- 'gray'
     }
     
-    cubeRainbow(cubeCoord[i,1],cubeCoord[i,2],cubeCoord[i,3], filled=T, fillcol = cubeColor)
+    cubeRainbow(cubeCoord[i,1],cubeCoord[i,2],cubeCoord[i,3], bordered=bordered, threeD=threeD, filled=T, fillcol = cubeColor)
+
+    if (printBuild) {
+      # save picture as a png to your working directory. WARNING: overwrites
+      snapName <- paste0("AAsmaigStack_", formatC(i), ".png") # create a variable with the name of the new picture
+      rgl.snapshot(snapName)
+      print(snapName)
+      Sys.sleep(bigPause)
+    }
+
   }
   
+
   newMatrix = diag(1,4,4) # diagonals = 1; sets the starting point of the matrix in 3d
-  stackSize =10
-  cRow = stackSize+1
-  # Use the Eular angles stored in the last row (stackSize+1) of cubeCord
-  # rotate3d(obj, angle, x, y, z, matrix, ...)
-  newMatrix = rotate3d(newMatrix, pi*(cubeCoord[stackSize+1,1]/180), 1,0,0) # Rotate about model's x axis
-  newMatrix = rotate3d(newMatrix, pi*(cubeCoord[stackSize+1,2]/180), 0,1,0) # Rotate about model's y axis
-  newMatrix = rotate3d(newMatrix, pi*(cubeCoord[stackSize+1,3]/180), 0,0,1) # Rotate about model's z axis
-  par3d(userMatrix = newMatrix, zoom = 1) # changed from cubeCoord[stackSize+1,4]
-  
-  
-  rgl.pop("lights")
-  light3d(diffuse = "gray50", specular = "gray50")
+  controlMatrix = diag(1,3,3)
+    cRow = stackSize+1
+
+  for (i in 1:3) {  # Create another loop that moves frame by frame in 5 degree increments by slicing up the cubeCoord.
+    # Use the Eular angles stored in the last row (stackSize+1) of cubeCord
+    # rotate3d(obj, angle, x, y, z, matrix, ...)
+    lp = abs(round(cubeCoord[stackSize+1,1]/5,0)) # set number of loops for each axis rotation; no more than 9
+      if (lp > 9) {lp = 9}
+    for (j in 1:lp) {
+      newMatrix = rotate3d(newMatrix, pi*(j/180), controlMatrix[i,1],controlMatrix[i,2],controlMatrix[i,3]) # Rotate about model's x axis
+      par3d(userMatrix = newMatrix, zoom = 1) # changed from cubeCoord[stackSize+1,4]
+      if (printBuild) {  
+        snapName <- paste0("BBsmaigRotate_", formatC((i*10)+j), ".png") # create a variable with the name of the new picture
+        rgl.snapshot(snapName)
+        print(snapName)
+        Sys.sleep(bigPause)  
+      }
+    }
+  }
+ 
+  if (rglAxis == TRUE) { # need to increase zoom if Axes are visible      
+    for (i in 1:8) {
+      par3d(zoom = 1-(i*.05)) # zoom into the screen 
+        if (printBuild) {  
+          snapName <- paste0("CCsmaigZoom_0", formatC(i), ".png") # create a variable with the name of the new picture
+          rgl.snapshot(snapName)
+          print(snapName)
+        }
+      
+      
+      
+      Sys.sleep(bigPause)  
+    }
+  } 
+  #light3d(diffuse = "gray75", specular = "gray75")
   #rgl.light( theta = 0, phi = 0, viewpoint.rel = TRUE, ambient = "gray50", diffuse = "gray50", specular = "gray50", x = NULL, y = NULL, z = NULL)
-  
-  
+  setwd(thiswd)
+
   
 }
 
@@ -387,9 +433,8 @@ mirrorStack <- function(cMarker=FALSE, saveStack = FALSE){
 #-----------------------------------------------------------------------------------
 
 twinStack <- function(cMarker=FALSE){
-  #cMarker: first cube blue,second red; # saveStack: save mirror to cubeCord
+  #cMarker: first cube blue, last red; # saveStack: save mirror to cubeCord
   stackSize = 10
-  # cMarker: first cube=blue, second cube=red
   x <- cubeCoord
   addSpace <- array(c(0,0,0))
   addEval <- array(c(0,0))
@@ -426,6 +471,35 @@ twinStack <- function(cMarker=FALSE){
     x[i,1] = cubeX
     x[i,2] = cubeY
     x[i,3] = cubeZ
+  }
+}
+## -------------------------------------------------------------------------------------
+# cube function is from https://gist.github.com/EconometricsBySimulation/5c00a9e91abebd889fb7
+cubeRainbow <- function(x=0,y=0,z=0, threeD=TRUE, bordered=FALSE, 
+                        filled = TRUE, lwd=2, scale=1,
+                        fillcol = 'blue',
+                        bordercol ='gray', ...) {
+  mycube <- cube3d(color = fillcol, alpha = 1, shininess=1, lit=threeD)
+  #material3d(shininess=1)
+  # Reduce size to unit
+  mycube$vb[4,] <- mycube$vb[4,]/scale*2
+  
+  for (i in 1:length(x)) {
+    # Add cube border
+    if (bordered) {
+      bcube <- mycube
+      bcube$material$lwd <- lwd
+      bcube$material$front <- 'line'
+      bcube$material$back <- 'line'
+      bcube %>% translate3d(x[i], y[i], z[i]) %>% shade3d
+    }
+    # Add cube fill
+    if (filled) {
+      fcube <- mycube
+      #fcube$vb[4,] <- fcube$vb[4,]*1.01
+      fcube$material$col <- fillcol
+      fcube %>% translate3d(x[i], y[i], z[i]) %>% shade3d
+    }
   }
 }
 
@@ -503,92 +577,89 @@ buildStack <- function(upLeg = 4, stackSize=10)  {
   # clearStack 
   cubeCoo = blankMatrix(stackSize = stackSize+1)
   # 2-4 cubes in a leg; if legs 1 and 2 == 4 then 3 and 4 = 2; if 1 and 2 == 2 then 3 and 4 = 4
-  legCubes <- c(0,0,0,0)
-  legCubes[1] = sample(2:4, 1) #the number of cubes in the first leg 
-  if (legCubes[1] == 4) {
-    legCubes[1] <- sample(2:4, 1)  ## trim the odds of getting 4 on first leg
-  }
-  if (legCubes[1] > 3) {
-    upLeg = 3
-  }
-  legCubes[2] <- sample(2:upLeg, 1) #the number of cubes in the second leg 
-  if (legCubes[1]+legCubes[2] > 5) {
-    upLeg = 3
-  }
-  if (legCubes[1]+legCubes[2] > 6) {
-    upLeg = 2
-  }
-  
-  if (upLeg > 2) { 
-    legCubes[3] <- sample(2:upLeg, 1)
-  } else {
-    legCubes[3] = 2
-  }
-  
-  legCubes[4] <- stackSize-(legCubes[1]+legCubes[2]+legCubes[3])
-  
-  prevDirection = 0
+  # There are 26 unique leg-size combinations using ten cubes and four legs if you control for reverse order duplication  
+  legOptions <- c(2, 2, 2, 4,
+                  2, 2, 3, 3,
+                  2, 2, 4, 2,
+                  2, 2, 5, 1,
+                  2, 3, 2, 3,
+                  2, 3, 3, 2,
+                  2, 3, 4, 1,
+                  2, 4, 2, 2,
+                  3, 2, 2, 3,
+                  3, 2, 3, 2)
+    
+    legOptions <- matrix(legOptions,nrow = length(legOptions)/4, ncol=4, byrow=TRUE)
+  temp = sample(1:length(legOptions)/4, 1)
+  legCubes <- legOptions[temp, 1:4]  # quasi-randomly select the number of cubes in each leg 1:4
+
   legCubeCount = 1 #counter for cubes in current leg (up to 4). Controls turn 
   leg = 1 # counter for legs; 4 legs in a stack  | 10 cubes
   
   # Initial face and direction of first leg
   face <- 1 #Set it to 1; it won't vary 3d until the second turn. sample(1:3, 1) # select face/axis 1=x 2=y 3=z
   prevFace <- array(c(1,0,0)) #used to track the number of times a face/axis is selected; allow no more than 2
-  direction <- 1 #sample(1:2, 1) # 1=pos 2=neg  #if (direction == 2) {  direction <- -1 }    
+  direction <- 1 # first cube == x+ # 1=pos -1=neg      
   # Copy direction to the face/axis of each cube > 1. We'll add (+1 or -1) as we loop through each cube.
   for (i in 2:10) { 
-    cubeCoo[i,face] <- direction
+    cubeCoo[i,face] <- direction  #set each cell in x column to 1; increment as needed
   }
   
   # Build Legs ------------------------------------------------------------------------------------------
   for (i in 1:stackSize) { # build four legs using 'stackSize' number of cubes
-    cubeCoo[i,4] <- leg # store leg 
+    cubeCoo[i,4] <- leg # store leg # in last column of the cube matrix
     ## note to self: think of the first cube as your first turn decision with all faces available.
     ## another note to self: screw that first note! set the face and direction to always be xx = 1 or cubeCoord[1,2] = 1 (moving away from 0,0,0)
     ## also, set the face and direction of the second leg - seems logical given random turns don't have an impact until the 3rd turn; up to that point rotation is the only difference you would see looking at three dimensional perspectives
     ## so, cubeCoord[1,1] = 1  ; if (leg==2) {cubeCoord[i,3] = 1}
     ## Set prevFace 1-3 to count the number times a direction is selected; allow no more than two selection and never twice in a row
-    if (legCubeCount == 1 && i > 1) {  # first cube is preset
-      checkFace <- face # don't allow a face twice in a row
-      while (checkFace == face || prevFace[face] > 1 || face == 0) {
-        face <- sample(1:3, 1) # select face/axis 1=x 2=y 3=z
-        direction <- sample(1:2, 1)
-        if (direction == 2) {
-          direction = -1
-        }
-      }
+    if (legCubeCount == 1 && i > 1) {  # first cube in the leg > 1
       
-      prevFace[abs(face)] <- prevFace[abs(face)]+direction
-      
-      if (leg==2) {  #set leg 2; see explanation above
-        face = 3 #z axis
-        direction = 1 #away from x axis in centered perspective with -z coming at you.
-      }
-      if (leg==4) {
-        face = 1 #x axis; this matches Vinay's images
+      if (leg==2) {  #set leg 2 to y+; see explanation above
+        face = 2 #y axis
+        direction = 1 #move up from x axis in centered perspective with -z coming at you.
       }
       if (leg==3){
-        face = 2 #x axis; this matches Vinay's images
+        face = sample(c(1,3), 1)
+        if (face == 1) {  # if x then only x-
+         direction = 1 
+        } else {
+          direction = sample(c(-1,1), 1)
+        }
+        
       }
-    } 
-    
-    
+     
+      if (leg==4) {
+        temp = face
+        while (face == temp) {  # can't equal the leg3 face/axis
+          face = sample(1:3, 1)
+        }
+        
+        if (face == 1) {  # if x then only x-
+          direction = -1 
+        } else {
+          direction = sample(c(-1,1), 1)
+        }    
+        print(paste('face = ', face))
+        print(paste('direction = ',direction))
+      }
+    }
     cubeCoo[i,face] <- cubeCoo[i,face]+direction #increment the axis
     
     if (i < stackSize) {  # replace all following with current 
-      temp = i+1
+      temp <- i+1
       for (j in temp:stackSize) {  
-        cubeCoo[j,face] = cubeCoo[i,face] 
+        cubeCoo[j,face] <- cubeCoo[i,face] 
       }
     }
-    
-    legCubeCount = legCubeCount + 1
-    
+
+    legCubeCount <- legCubeCount + 1
+
     if (legCubeCount > legCubes[leg]) {  
-      leg = leg+1
-      legCubeCount = 1
+      legCubeCount <- 1
+      print(paste('leg = ',leg))
+      leg <- leg+1
     }
-    
   }
   # Final row: generate and store coordinates xyz and zoom for par3d function: 3x3 matrix
   # This provides rotation of the matrix (with one axis held constant). 
@@ -598,7 +669,10 @@ buildStack <- function(upLeg = 4, stackSize=10)  {
   # the diagonals) the degree of rotation (percentage [degrees/180] of pi) for each axis.
   # rglToLattice(rotm = matrixName) will be used to extract x,y,z from userMatrix in storeMatrix function
   newRotation = c(0,0,0) 
-  newRotation = sample(seq(-175,180,by=5), 3, replace = FALSE) # pi = 180 degrees rotation; greatest degree = 359 360 = 0 (look up cosine)
+  newRotation = sample(seq(-170,180,by=10), 3, replace = FALSE) # pi = 180 degrees rotation; greatest degree = 359 360 = 0 (look up cosine)
+  if (newRotation[1] == 180 && newRotation[2] == 180 && newRotation[3] == 180) { # Prevent rotating to origin
+    newRotation = sample(seq(-170,170,by=10), 3, replace = FALSE)
+  }
   cubeCoo[11,1:3] <- newRotation[1:3]
   cubeCoo[11,4] <- 1 #default zoom # par3d("zoom") set to 1 as default
   return(cubeCoo)
@@ -641,9 +715,3 @@ saveStack <- function()  {
   return(SMAIGnew)
 }
 
-
-#-----------------------------------------------------------------------------------
-##movie3d(spin3d(axis=c(20,-10,-60), rpm=4), duration=10) 
-##spin3d()
-#-----------------------------------------------------------------------------------
-#-----------------------------------------------------------------------------------

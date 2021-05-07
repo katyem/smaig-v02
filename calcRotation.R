@@ -28,11 +28,13 @@ A <- diag(1,3,3) # diagonals <- 1; sets the starting point of the matrix in 3d
 for (i in 1:(NROW(SMAIGtable)/(stackSize+1))) {  
 
   cubeCoord <- tableStack(stackID = i)
+  # cubeCoord <- tableStack(stackID = i)
   #print(cubeCoord[11,])
   #displayStack(newScreen <- TRUE, cMarker <- T)
   B <- diag(1,3,3) # diagonals <- 1; sets the starting point of the matrix in 3d
   
-  # Use the Eular angles stored in the last row (stackSize+1) of cubeCord
+  # Use the Euler angles stored in the last row (stackSize+1) of cubeCord
+  # rotate3d translates the Euler angles to coordinates in the 3x3 matrix
   # rotate3d(obj, angle, x, y, z, matrix, ...)
   B <- rotate3d(B, pi*(cubeCoord[stackSize+1,1]/180), 1,0,0) # Rotate about model's x axis
   B <- rotate3d(B, pi*(cubeCoord[stackSize+1,2]/180), 0,1,0) # Rotate about model's y axis
