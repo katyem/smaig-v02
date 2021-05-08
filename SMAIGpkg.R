@@ -30,7 +30,7 @@ light3d(diffuse = "gray75", specular = "gray75")
 }
 
 #-----------------------------------------------------------------------------------
-displayStack <- function(cMarker=FALSE, newScreen = FALSE, stay = FALSE, rglAxis = FALSE){
+displayStack <- function(threeD = T, cMarker=FALSE, newScreen = FALSE, stay = FALSE, rglAxis = FALSE){
   x = c(20, 20, 420, 420) # size of new screen if first one
   countScreens = rgl.dev.list()
   if (length(countScreens) == 0) {
@@ -40,9 +40,9 @@ displayStack <- function(cMarker=FALSE, newScreen = FALSE, stay = FALSE, rglAxis
     x = c(20, 20, 420, 420)
     
     if (length(countScreens) == 1) {
-      x = c(20, 420, 420, 820)
+      x <- c(20, 420, 420, 820)
     } else if (length(countScreens) > 1) {
-      x = c(20, 20+(length(countScreens)*10), 420, 470+(length(countScreens)*10))
+      x <- c(20, 20+(length(countScreens)*10), 420, 470+(length(countScreens)*10))
     }
     
     open3d()    
@@ -53,10 +53,15 @@ displayStack <- function(cMarker=FALSE, newScreen = FALSE, stay = FALSE, rglAxis
   }
   
   rgl.bringtotop(stay)
-  stackSize=nrow(cubeCoord)-1
-  cubeColor <- 'gray'
+  stackSize <- nrow(cubeCoord)-1
+  
+  if (threeD == T) {
+    cubeColor <- 'gray'
+  } else {
+    cubeColor <- 'white'
+  }
   if (exists("cubeCoord") == F) {
-    cubeCoord <<- buildStack() # assign to envir = .GlobalEnv)
+    cubeCoord <- buildStack() # assign to envir = .GlobalEnv)
   }
   
   # Fix the centering problem; 
@@ -94,14 +99,14 @@ displayStack <- function(cMarker=FALSE, newScreen = FALSE, stay = FALSE, rglAxis
         cubeColor <- 'gray'
       }
     }
-    cube(cubeCoord[i,1],cubeCoord[i,2],cubeCoord[i,3], filled=T, fillcol = cubeColor)
+    cube(cubeCoord[i,1],cubeCoord[i,2],cubeCoord[i,3], filled=T, fillcol = cubeColor, threeD=threeD)
   }
   
-  newMatrix = diag(1,4,4) # diag = 1
-  cRow = stackSize+1
-  newMatrix = rotate3d(newMatrix, pi*(cubeCoord[stackSize+1,1]/180), 1,0,0) # Rotate about model's x axis
-  newMatrix = rotate3d(newMatrix, pi*(cubeCoord[stackSize+1,2]/180), 0,1,0) # Rotate about model's y axis
-  newMatrix = rotate3d(newMatrix, pi*(cubeCoord[stackSize+1,3]/180), 0,0,1) # Rotate about model's z axis
+  newMatrix <- diag(1,4,4) # diag = 1
+  cRow <- stackSize+1
+  newMatrix <- rotate3d(newMatrix, pi*(cubeCoord[stackSize+1,1]/180), 1,0,0) # Rotate about model's x axis
+  newMatrix <- rotate3d(newMatrix, pi*(cubeCoord[stackSize+1,2]/180), 0,1,0) # Rotate about model's y axis
+  newMatrix <- rotate3d(newMatrix, pi*(cubeCoord[stackSize+1,3]/180), 0,0,1) # Rotate about model's z axis
   par3d(userMatrix = newMatrix, zoom = 1) # changed from cubeCoord[stackSize+1,4]
   
   rgl.pop("lights")
@@ -195,8 +200,9 @@ displayRainbow <- function(bordered=FALSE, stackSize = 10, rglAxis = FALSE, prin
   cubeColor <- 'gray'
   if (exists("cubeCoord") == F) {
     cubeCoord <<- buildStack() # assign to envir = .GlobalEnv)
+    print("using buildSack: cubeCoord was unpopulated")
   }
-  
+   #print(cubeCoord)
   # Fix the centering problem; 
   # 1) Find the center of each stack axis
   lgVal = c(0,0,0)
@@ -208,6 +214,7 @@ displayRainbow <- function(bordered=FALSE, stackSize = 10, rglAxis = FALSE, prin
       }
     }
   }
+
   #########cubeCoord = temp
   # 2) calculate the center and replace all cubeCoord values
   is.even <- function(x) x %% 2 == 0
@@ -222,7 +229,7 @@ displayRainbow <- function(bordered=FALSE, stackSize = 10, rglAxis = FALSE, prin
     }
   }
 
-  bigPause = .25
+  bigPause = .35
   
   for (i in 1:stackSize) { # build four legs using 'stackSize' number of cubes
     if (i == 1) {
@@ -257,7 +264,7 @@ displayRainbow <- function(bordered=FALSE, stackSize = 10, rglAxis = FALSE, prin
     }
     
     cubeRainbow(cubeCoord[i,1],cubeCoord[i,2],cubeCoord[i,3], bordered=bordered, threeD=threeD, filled=T, fillcol = cubeColor)
-
+    
     if (printBuild) {
       # save picture as a png to your working directory. WARNING: overwrites
       snapName <- paste0("AAsmaigStack_", formatC(i), ".png") # create a variable with the name of the new picture
@@ -268,26 +275,36 @@ displayRainbow <- function(bordered=FALSE, stackSize = 10, rglAxis = FALSE, prin
 
   }
   
-
+  ##print(paste("Coordinates: ", i+1, " = ", cubeCoord[i+1, 1:3]))
+  
   newMatrix = diag(1,4,4) # diagonals = 1; sets the starting point of the matrix in 3d
   controlMatrix = diag(1,3,3)
-    cRow = stackSize+1
-
-  for (i in 1:3) {  # Create another loop that moves frame by frame in 5 degree increments by slicing up the cubeCoord.
-    # Use the Eular angles stored in the last row (stackSize+1) of cubeCord
-    # rotate3d(obj, angle, x, y, z, matrix, ...)
-    lp = abs(round(cubeCoord[stackSize+1,1]/5,0)) # set number of loops for each axis rotation; no more than 9
+  cRow = stackSize+1
+  i = 1
+  if (printBuild) {
+    for (i in 1:3) {  # Create another loop that moves frame by frame in 5 degree increments by slicing up the cubeCoord.
+      # Use the Eular angles stored in the last row (stackSize+1) of cubeCord
+      # rotate3d(obj, angle, x, y, z, matrix, ...)
+      lp = abs(round(cubeCoord[stackSize+1,i]/5,0)) # set number of loops for each axis rotation; no more than 9
       if (lp > 9) {lp = 9}
-    for (j in 1:lp) {
-      newMatrix = rotate3d(newMatrix, pi*(j/180), controlMatrix[i,1],controlMatrix[i,2],controlMatrix[i,3]) # Rotate about model's x axis
-      par3d(userMatrix = newMatrix, zoom = 1) # changed from cubeCoord[stackSize+1,4]
-      if (printBuild) {  
-        snapName <- paste0("BBsmaigRotate_", formatC((i*10)+j), ".png") # create a variable with the name of the new picture
-        rgl.snapshot(snapName)
-        print(snapName)
-        Sys.sleep(bigPause)  
-      }
+        for (j in 1:lp) {
+          newMatrix = rotate3d(newMatrix, pi*(j/180), controlMatrix[i,1],controlMatrix[i,2],controlMatrix[i,3]) # Rotate about model's x axis
+          par3d(userMatrix = newMatrix, zoom = 1) # changed zoom from cubeCoord[stackSize+1,4]
+          if (printBuild) {  
+            snapName <- paste0("BBsmaigRotate_", formatC((i*10)+j), ".png") # create a variable with the name of the new picture
+            rgl.snapshot(snapName)
+            print(snapName)
+            Sys.sleep(bigPause)  
+          }
+        }
     }
+  } else {
+    newMatrix = diag(1,4,4) # diag = 1
+    newMatrix = rotate3d(newMatrix, pi*(cubeCoord[stackSize+1,1]/180), 1,0,0) # Rotate about model's x axis
+    newMatrix = rotate3d(newMatrix, pi*(cubeCoord[stackSize+1,2]/180), 0,1,0) # Rotate about model's y axis
+    newMatrix = rotate3d(newMatrix, pi*(cubeCoord[stackSize+1,3]/180), 0,0,1) # Rotate about model's z axis
+    par3d(userMatrix = newMatrix, zoom = 1) # changed from cubeCoord[stackSize+1,4]
+    
   }
  
   if (rglAxis == TRUE) { # need to increase zoom if Axes are visible      
@@ -299,14 +316,14 @@ displayRainbow <- function(bordered=FALSE, stackSize = 10, rglAxis = FALSE, prin
           print(snapName)
         }
       
-      
-      
       Sys.sleep(bigPause)  
     }
   } 
   #light3d(diffuse = "gray75", specular = "gray75")
   #rgl.light( theta = 0, phi = 0, viewpoint.rel = TRUE, ambient = "gray50", diffuse = "gray50", specular = "gray50", x = NULL, y = NULL, z = NULL)
-  setwd(thiswd)
+  if (printBuild) {
+    setwd(thiswd)
+  }
 
   
 }
@@ -505,11 +522,13 @@ cubeRainbow <- function(x=0,y=0,z=0, threeD=TRUE, bordered=FALSE,
 
 ## -------------------------------------------------------------------------------------
 # cube function is from https://gist.github.com/EconometricsBySimulation/5c00a9e91abebd889fb7
-cube <- function(x=0,y=0,z=0, bordered=FALSE, 
+cube <- function(x=0,y=0,z=0, bordered=FALSE, threeD = TRUE,
                  filled = TRUE, lwd=2, scale=1,
                  fillcol = 'blue',
                  bordercol ='gray', ...) {
-   mycube <- cube3d(color = fillcol, alpha = 1, shininess=1)
+  
+   mycube <- cube3d(color = fillcol, alpha = 1, shininess=1, lit=threeD)
+   
   #material3d(shininess=1)
   # Reduce size to unit
   mycube$vb[4,] <- mycube$vb[4,]/scale*2
@@ -689,7 +708,7 @@ store3d <- function(){
     cubeCo[11,1] = round(degLatt[[3]][1],5) # FYI, pi == 180 degrees
     cubeCo[11,2] = round(degLatt[[2]][1],5) # FYI, pi == 180 degrees
     cubeCo[11,3] = round(degLatt[[1]][1],5) # FYI, pi == 180 degrees
-    cubeCo[11,4] = par3d("zoom") 
+    ##cubeCo[11,4] = par3d("zoom") 
 
   return(cubeCo)
 }

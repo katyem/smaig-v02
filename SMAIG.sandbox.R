@@ -10,13 +10,14 @@ library('magrittr')
 library("openxlsx")
 getwd()
 thiswd = "D:/R stuff/smaig-v02"
-imagewd = "D:/R stuff/smaig-v02/smaigPics"
+imagewd = "D:/R stuff/smaig-v02/smaigGray"
 
 setwd(thiswd) #My AIG files
 source("SMAIGpkg.R")  #treating this like a package
 
-SMAIGtable <- read.xlsx("SMAIG.test.xlsx")  # read first sheet of your deck of stacks
+SMAIGtable <- read.xlsx("SMMRT_Final.xlsx")  # read first sheet of your deck of stacks
 #head(SMAIGtable[, 1:5])
+#SMAIGtable <- read.xlsx("SMAIG.test.xlsx") 
 
 View(SMAIGtable)
 ##  CHECK to see if you need to delete the first column and run the line below.
@@ -36,8 +37,8 @@ View(SMAIGtable)
   cubeCoord = buildStack() 
 displayStack(cMarker = T)
 cubeCoord = store3d()  
-##OR repopulate the cubeCoord matrix with SMAIGTable data for the stackID passed
-  cubeCoord <- tableStack(stackID =1) # if stackID==0, choose first stack in SMAIGtable
+##OR repopulate the cubeCoord matrix with tableStack function calling SMAIGTable data based on the stackID passed
+  cubeCoord <- tableStack(stackID = 28) # if stackID==0, choose first stack in SMAIGtable
 #-----------------------------------------------------------------------------------
 ## DISPAY the stack in a window - careful, RStudio may place this window in a different monitor if available.
   displayStack(cMarker = F) #cMarker: blue for first cube and red for last cube
@@ -72,16 +73,20 @@ cubeCoord = store3d()
 
       SMAIGtable <- read.xlsx("SMAIG.test.xlsx")  # read first sheet of your deck of stacks
     cubeCoord <- tableStack(stackID=18)  
-    
+    setwd(thiswd) #My AIG files 
   source("SMAIGpkg.R")  #smaig function library       
-
-    cubeCoord = buildStack() 
-    displayStack(newScreen = F, cMarker = T)
-      
-    cubeCoord <- tableStack(stackID=15)
+    SMAIGtable <- read.xlsx("SMMRT_Final.xlsx")
+    #cubeCoord = buildStack() 
+    cubeCoord <- tableStack(stackID=27)
+    print(cubeCoord)    
+    displayStack(newScreen = F, cMarker = T, threeD = T)
+    displayStack(cMarker = F, threeD = F)
     #displayStack(newScreen = T, cMarker = T, rglAxis = T)
-    displayRainbow(newScreen = T, threeD = F, printBuild = F, rglAxis = T ) 
- 
+    displayRainbow(newScreen = T, threeD = F, printBuild = F, rglAxis = F ) 
+    # save current stack to cubeCoord  
+    cubeCoord = store3d()  
+    
+    
 displayRainbow(newScreen = T, threeD = T, printBuild = T, rglAxis = T )  
 
     spheres3d(0, 0, 0, radius = 4.5, col=rgb(1,1,1), alpha=0.3)
@@ -109,8 +114,8 @@ displayRainbow(newScreen = T, threeD = T, printBuild = T, rglAxis = T )
   write.xlsx(SMAIGtable, file = "SMMRT_Rotations.xlsx")
   
 # save picture as a png to your working directory. WARNING: overwrites
-  setwd("D:/R stuff/smaig-v02/smaigPics") # Change to reflect your working directory
-  i = 99 # should use the stackID in the SMAIGtable to match pictures' names to data
+  setwd(imagewd) # Change to reflect your working directory
+  i = 1 # should use the stackID in the SMAIGtable to match pictures' names to data
 
   #snapName <- "smaig.png "
     snapName <- paste0("smaig ", formatC(i), ".png") # create a variable with the name of the new picture
@@ -119,20 +124,24 @@ displayRainbow(newScreen = T, threeD = T, printBuild = T, rglAxis = T )
   rgl.snapshot(snapName)
   ##
 
-  setwd("D:/R stuff/AIG") # Change to reflect your working directory
+  setwd(thiswd) # Change to reflect your working directory
 
   #-----------------------------------------------------------------------------------
   #-----------------------------------------------------------------------------------
   ## Save pictures of all stacks in current SMAIGtable
   # save picture as a png to your working directory. WARNING: overwrites
     setwd(imagewd)
-   stackCount  = SMAIGtable[nrow(SMAIGtable) ,1]
+    getwd()
+    stackCount  = SMAIGtable[nrow(SMAIGtable) ,1] #count of stacks in the tablea/matrix
   for (i in 1:stackCount) {
-    cubeCoord <- tableStack(stackID = i) 
-    displayRainbow()
+    ##repopulate the cubeCoord matrix with tableStack function calling SMAIGTable data based on the stackID parameter
+    cubeCoord <- tableStack(stackID = i) # if stackID==0, choose first stack in SMAIGtable
+    #displayRainbow(newScreen = F, threeD = F, printBuild = F, rglAxis = F ) 
+    
     #displayRainbow2(stackCount = i) #stackCount sets each stack to one solid color
-    displayStack(cMarker = F) 
+    displayStack(cMarker = F, threeD = F) 
     snapName <- paste0("Gray_", formatC(i), ".png") # create a variable with the name of the new picture
+    #snapName <- paste0("RB_", formatC(i), ".png") # create a variable with the name of the new picture
     
     if (i < 10) {
     snapName <- paste0("Gray_0", formatC(i), ".png") # create a variable with the name of the new picture
